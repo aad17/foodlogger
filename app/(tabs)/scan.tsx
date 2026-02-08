@@ -88,7 +88,10 @@ export default function ScanScreen() {
     const handleSave = async () => {
         if (!user || !result) return;
         try {
-            await addFoodLog(user.uid, result);
+            await addFoodLog(user.uid, {
+                ...result,
+                imageUri: imageUri || undefined
+            });
             Alert.alert('Saved!', 'Meal logged successfully.', [
                 {
                     text: 'OK',

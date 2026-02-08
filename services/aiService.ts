@@ -18,6 +18,7 @@ export interface FoodData {
     category: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
     timestamp: string;
     confidence: number;
+    imageUri?: string;
 }
 
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
