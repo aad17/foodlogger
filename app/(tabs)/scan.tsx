@@ -17,9 +17,40 @@ export default function ScanScreen() {
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<FoodData | null>(null);
 
+    const [permission, requestPermission] = ImagePicker.useCameraPermissions();
+
     const pickImage = async () => {
         // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            handleImageSelected(result.assets[0].uri);
+        }
+    };
+
+    const takePhoto = async () => {
+        if (!permission) {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Denied', 'Sorry, we need camera permissions to make this work!');
+                return;
+            }
+        }
+
+        if (permission?.status !== ImagePicker.PermissionStatus.GRANTED && permission?.canAskAgain) {
+            const result = await requestPermission();
+            if (!result.granted) {
+                Alert.alert('Permission Denied', 'You need to enable camera permissions in settings.');
+                return;
+            }
+        }
+
+        let result = await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
@@ -96,7 +127,7 @@ export default function ScanScreen() {
             {/* Scanner View (Mock Camera) */}
             <View style={styles.cameraPreview}>
                 <Ionicons name="camera-outline" size={100} color="rgba(255,255,255,0.2)" />
-                <Text style={styles.instruction}>Point at food</Text>
+                <Text style={styles.instruction}>Tap shutter to capture</Text>
             </View>
 
             {/* Loading Overlay */}
@@ -113,7 +144,7 @@ export default function ScanScreen() {
                     <Ionicons name="images" size={24} color="#fff" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.shutterBtn} onPress={() => Alert.alert('Camera', 'Web implementation limited. Use Gallery.')}>
+                <TouchableOpacity style={styles.shutterBtn} onPress={takePhoto}>
                     <View style={styles.shutterInner} />
                 </TouchableOpacity>
 

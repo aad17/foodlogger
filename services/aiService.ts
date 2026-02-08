@@ -1,6 +1,6 @@
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import * as FileSystem from 'expo-file-system';
+// Use legacy API to avoid deprecation warnings/errors with readAsStringAsync
+import * as FileSystem from 'expo-file-system/legacy';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
@@ -38,13 +38,22 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
     }
 
     try {
+        console.log(`[aiService] Analyzing URI: ${uri}`);
         let base64 = '';
         if (uri.startsWith('data:image')) {
+            console.log('[aiService] URI is data-uri');
             base64 = uri.split(',')[1];
         } else {
-            base64 = await FileSystem.readAsStringAsync(uri, {
-                encoding: 'base64',
-            });
+            console.log('[aiService] Reading file from FS...');
+            try {
+                base64 = await FileSystem.readAsStringAsync(uri, {
+                    encoding: 'base64',
+                });
+                console.log(`[aiService] Read success. Base64 length: ${base64.length}`);
+            } catch (fsError) {
+                console.error('[aiService] FileSystem Read Error:', fsError);
+                throw new Error('Failed to read image file');
+            }
         }
 
         const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
@@ -96,6 +105,15 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
 
     } catch (error) {
         console.error('Error analyzing image with Gemini:', error);
+        // @ts-ignore
+        if (error.response) {
+            // @ts-ignore
+            console.error('API Response Error:', error.response);
+        }
+        if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+        }
         throw error;
     }
 };
