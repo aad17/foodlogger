@@ -47,7 +47,12 @@ export const getDailyLogs = async (userId: string, date: Date = new Date()) => {
         const logs: FoodData[] = [];
 
         querySnapshot.forEach((doc) => {
-            logs.push(doc.data() as FoodData);
+            const data = doc.data();
+            logs.push({
+                ...data,
+                // @ts-ignore
+                timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString()
+            } as FoodData);
         });
 
         return logs;
@@ -57,26 +62,34 @@ export const getDailyLogs = async (userId: string, date: Date = new Date()) => {
     }
 };
 
-export const getWeeklyStats = async (userId: string) => {
-    // Placeholder for weekly stats logic
-    // In a real app, you might aggregate this on write or use a cloud function
-    // For now, we can fetch last 7 days logs
-    const now = new Date();
-    const past7Days = new Date();
-    past7Days.setDate(now.getDate() - 7);
+export const getWeeklyLogs = async (userId: string): Promise<FoodData[]> => {
+    try {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 6); // Last 7 days including today
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
 
-    const q = query(
-        collection(db, 'users', userId, LOGS_COLLECTION),
-        where('timestamp', '>=', Timestamp.fromDate(past7Days)),
-        orderBy('timestamp', 'asc')
-    );
+        const q = query(
+            collection(db, 'users', userId, LOGS_COLLECTION),
+            where('timestamp', '>=', Timestamp.fromDate(start)),
+            where('timestamp', '<=', Timestamp.fromDate(end)),
+            orderBy('timestamp', 'desc')
+        );
 
-    const querySnapshot = await getDocs(q);
-    // Process logs to group by day...
-    // Returning raw logs for now to be processed by component
-    const logs: any[] = [];
-    querySnapshot.forEach((doc) => {
-        logs.push({ ...doc.data(), id: doc.id });
-    });
-    return logs;
+        const querySnapshot = await getDocs(q);
+        const logs: FoodData[] = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            logs.push({
+                ...data,
+                // @ts-ignore
+                timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString()
+            } as FoodData);
+        });
+        return logs;
+    } catch (error) {
+        console.error('Error getting weekly logs:', error);
+        return [];
+    }
 };
