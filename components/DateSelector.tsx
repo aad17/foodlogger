@@ -3,16 +3,31 @@ import { Colors } from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, startOfWeek } from 'date-fns';
 
-export default function DateSelector() {
+interface DateSelectorProps {
+    selectedDate: Date;
+    onSelectDate: (date: Date) => void;
+}
+
+export default function DateSelector({ selectedDate, onSelectDate }: DateSelectorProps) {
     const today = new Date();
-    const start = startOfWeek(today);
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+    const start = startOfWeek(selectedDate); // Show week around selected date or stick to current week? Let's stick to current week for simple MVP or week containing selected date
+    // User probably wants to scroll back. For now let's just show a static strip of "this week" or "selected week".
+    // Let's stick to "This Week" for now as per previous design, but allow selecting.
+
+    // Actually, if I select a past date, I should probably see that date. 
+    // Let's generate the week based on the selectedDate to allow navigating weeks if we added arrows.
+    // For now, let's keep the "current week" view but allow selecting days within it, 
+    // AND if the user selects a date (e.g. via calendar in future), we might need to shift.
+    // To keep it simple: Show the week containing the `selectedDate`.
+
+    const startOfSelectedWeek = startOfWeek(selectedDate);
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startOfSelectedWeek, i));
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.monthSelector}>
-                    <Text style={styles.monthText}>{format(today, 'MMMM')}</Text>
+                    <Text style={styles.monthText}>{format(selectedDate, 'MMMM')}</Text>
                     <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
                 </View>
                 <TouchableOpacity style={styles.notificationBtn}>
@@ -22,18 +37,23 @@ export default function DateSelector() {
 
             <View style={styles.weekStrip}>
                 {weekDays.map((date, index) => {
-                    const isSelected = format(date, 'd') === format(today, 'd');
+                    const isSelected = format(date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                    const isToday = format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
                     return (
-                        <View key={index} style={[styles.dayItem, isSelected && styles.selectedDayItem]}>
+                        <TouchableOpacity
+                            key={index}
+                            style={[styles.dayItem, isSelected && styles.selectedDayItem]}
+                            onPress={() => onSelectDate(date)}
+                        >
                             <Text style={[styles.dayLabel, isSelected && styles.selectedText]}>
                                 {format(date, 'EEEEE')}
                             </Text>
-                            <View style={[styles.dateCircle, isSelected && styles.selectedDateCircle]}>
+                            <View style={[styles.dateCircle, isSelected && styles.selectedDateCircle, !isSelected && isToday && styles.todayDateCircle]}>
                                 <Text style={[styles.dateText, isSelected && styles.selectedText]}>
                                     {format(date, 'd')}
                                 </Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     );
                 })}
             </View>
@@ -107,5 +127,9 @@ const styles = StyleSheet.create({
     },
     selectedText: {
         color: '#fff', // Always white on selected
+    },
+    todayDateCircle: {
+        borderWidth: 1,
+        borderColor: Colors.actionOrange,
     },
 });

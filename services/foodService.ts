@@ -6,7 +6,9 @@ import {
     where,
     getDocs,
     Timestamp,
-    orderBy
+    orderBy,
+    deleteDoc,
+    doc
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FoodData } from './aiService';
@@ -24,6 +26,16 @@ export const addFoodLog = async (userId: string, foodData: FoodData) => {
         return docRef.id;
     } catch (e) {
         console.error('Error adding document: ', e);
+        throw e;
+    }
+};
+
+export const deleteFoodLog = async (userId: string, logId: string) => {
+    try {
+        await deleteDoc(doc(db, 'users', userId, LOGS_COLLECTION, logId));
+        console.log('Document deleted with ID: ', logId);
+    } catch (e) {
+        console.error('Error deleting document: ', e);
         throw e;
     }
 };
@@ -50,6 +62,7 @@ export const getDailyLogs = async (userId: string, date: Date = new Date()) => {
             const data = doc.data();
             logs.push({
                 ...data,
+                id: doc.id,
                 // @ts-ignore
                 timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString()
             } as FoodData);
@@ -83,6 +96,7 @@ export const getWeeklyLogs = async (userId: string): Promise<FoodData[]> => {
             const data = doc.data();
             logs.push({
                 ...data,
+                id: doc.id,
                 // @ts-ignore
                 timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString()
             } as FoodData);

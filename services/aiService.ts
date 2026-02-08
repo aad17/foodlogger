@@ -19,6 +19,7 @@ export interface FoodData {
     timestamp: string;
     confidence: number;
     imageUri?: string;
+    id?: string;
 }
 
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;

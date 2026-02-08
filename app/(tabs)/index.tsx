@@ -6,14 +6,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { getDailyLogs } from '../../services/foodService';
 import { FoodData } from '../../services/aiService';
+import { format } from 'date-fns';
 
 import DateSelector from '../../components/DateSelector';
 import CalorieHero from '../../components/CalorieHero';
 import MacroGrid from '../../components/MacroGrid';
 import LogCard from '../../components/LogCard';
 
+import { Link, useRouter, useFocusEffect } from 'expo-router';
+
 export default function Dashboard() {
     const { user } = useAuth();
+    const router = useRouter();
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const [dailyLogs, setDailyLogs] = useState<FoodData[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -23,18 +28,20 @@ export default function Dashboard() {
     const loadData = useCallback(async () => {
         if (!user) return;
         try {
-            const logs = await getDailyLogs(user.uid);
+            const logs = await getDailyLogs(user.uid, selectedDate);
             setDailyLogs(logs);
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, selectedDate]);
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [loadData])
+    );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -58,7 +65,7 @@ export default function Dashboard() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primaryYellow} />}
             >
                 {/* 1. Date Selector */}
-                <DateSelector />
+                <DateSelector selectedDate={selectedDate} onSelectDate={setSelectedDate} />
 
                 {/* 2. Hero Section (Calories) */}
                 <CalorieHero
@@ -76,17 +83,30 @@ export default function Dashboard() {
                 {/* 4. Recent Logs List */}
                 <View style={styles.logsSection}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Recent Logs</Text>
+                        <Text style={styles.sectionTitle}>
+                            {selectedDate.toDateString() === new Date().toDateString() ? 'Today\'s Logs' : 'Logs for ' + format(selectedDate, 'MMM d')}
+                        </Text>
                         <TouchableOpacity>
                             <Text style={styles.viewAllText}>View All</Text>
                         </TouchableOpacity>
                     </View>
 
                     {dailyLogs.length === 0 ? (
-                        <Text style={styles.emptyText}>No meals logged yet today.</Text>
+                        <Text style={styles.emptyText}>No meals logged for this day.</Text>
                     ) : (
                         dailyLogs.map((log, index) => (
-                            <LogCard key={index} log={log} />
+                            <Link
+                                key={index}
+                                href={{
+                                    pathname: "/log/[id]",
+                                    params: { id: log.id, data: JSON.stringify(log) }
+                                }}
+                                asChild
+                            >
+                                <TouchableOpacity>
+                                    <LogCard log={log} />
+                                </TouchableOpacity>
+                            </Link>
                         ))
                     )}
                 </View>
