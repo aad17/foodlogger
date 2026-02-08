@@ -80,35 +80,47 @@ export default function Dashboard() {
                     fat={Math.round(totalFat)}
                 />
 
-                {/* 4. Recent Logs List */}
+                {/* 4. Categorized Logs */}
                 <View style={styles.logsSection}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>
-                            {selectedDate.toDateString() === new Date().toDateString() ? 'Today\'s Logs' : 'Logs for ' + format(selectedDate, 'MMM d')}
-                        </Text>
-                        <TouchableOpacity>
-                            <Text style={styles.viewAllText}>View All</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Text style={styles.dateTitle}>
+                        {selectedDate.toDateString() === new Date().toDateString() ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
+                    </Text>
 
-                    {dailyLogs.length === 0 ? (
-                        <Text style={styles.emptyText}>No meals logged for this day.</Text>
-                    ) : (
-                        dailyLogs.map((log, index) => (
-                            <Link
-                                key={index}
-                                href={{
-                                    pathname: "/log/[id]",
-                                    params: { id: log.id, data: JSON.stringify(log) }
-                                }}
-                                asChild
-                            >
-                                <TouchableOpacity>
-                                    <LogCard log={log} />
-                                </TouchableOpacity>
-                            </Link>
-                        ))
-                    )}
+                    {['Breakfast', 'Morning Snack', 'Lunch', 'Evening Snack', 'Dinner'].map((category) => {
+                        const categoryLogs = dailyLogs.filter(log => log.category === category);
+
+                        // Optional: Hide empty sections or show all? 
+                        // Let's show all sections to encourage logging, but maybe compact if empty.
+                        // For now, let's only render sections that have logs OR always render main meals?
+                        // User said "segregate logs... into these categories". 
+                        // Let's render the header and then the logs.
+
+                        return (
+                            <View key={category} style={styles.categorySection}>
+                                <Text style={styles.categoryHeader}>{category}</Text>
+                                {categoryLogs.length > 0 ? (
+                                    categoryLogs.map((log, index) => (
+                                        <Link
+                                            key={index}
+                                            href={{
+                                                pathname: "/log/[id]",
+                                                params: { id: log.id, data: JSON.stringify(log) }
+                                            }}
+                                            asChild
+                                        >
+                                            <TouchableOpacity>
+                                                <LogCard log={log} />
+                                            </TouchableOpacity>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <View style={styles.emptyCategoryPlaceholder}>
+                                        <Text style={styles.emptyCategoryText}>No {category} logged</Text>
+                                    </View>
+                                )}
+                            </View>
+                        );
+                    })}
                 </View>
 
                 {/* Dev Button Area */}
@@ -139,6 +151,37 @@ const styles = StyleSheet.create({
     logsSection: {
         marginTop: 30,
         paddingHorizontal: 20,
+    },
+    dateTitle: {
+        color: Colors.textSecondary,
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 20,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    categorySection: {
+        marginBottom: 25,
+    },
+    categoryHeader: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    emptyCategoryPlaceholder: {
+        padding: 15,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderRadius: 15,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
+        borderStyle: 'dashed',
+    },
+    emptyCategoryText: {
+        color: Colors.textSecondary,
+        fontSize: 12,
+        fontStyle: 'italic',
     },
     sectionHeader: {
         flexDirection: 'row',

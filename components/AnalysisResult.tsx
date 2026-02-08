@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { FoodData } from '../services/aiService';
@@ -7,13 +8,27 @@ import { BlurView } from 'expo-blur';
 interface AnalysisResultProps {
     data: FoodData;
     imageUri?: string;
-    onSave: () => void;
+    onSave: (data: FoodData) => void;
     onDiscard: () => void;
 }
 
 const { width } = Dimensions.get('window');
 
+const CATEGORIES = ['Breakfast', 'Morning Snack', 'Lunch', 'Evening Snack', 'Dinner'] as const;
+
 export default function AnalysisResult({ data, imageUri, onSave, onDiscard }: AnalysisResultProps) {
+    const [currentCategory, setCurrentCategory] = useState<typeof CATEGORIES[number]>(
+        (CATEGORIES.includes(data.category as any) ? data.category : 'Breakfast') as any
+    );
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+    const handleSave = () => {
+        onSave({
+            ...data,
+            category: currentCategory
+        });
+    };
+
     return (
         <View style={styles.container}>
             {/* Hero Image */}
@@ -45,7 +60,12 @@ export default function AnalysisResult({ data, imageUri, onSave, onDiscard }: An
                     {/* Title & Qty */}
                     <View style={styles.titleRow}>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.categoryBadge}>{data.category || 'Food'}</Text>
+                            <TouchableOpacity onPress={() => setShowCategoryPicker(true)}>
+                                <View style={styles.categoryBadgeRow}>
+                                    <Text style={styles.categoryBadge}>{currentCategory}</Text>
+                                    <Ionicons name="chevron-down" size={12} color={Colors.textSecondary} style={{ marginBottom: 5 }} />
+                                </View>
+                            </TouchableOpacity>
                             <Text style={styles.foodName}>{data.foodName}</Text>
                         </View>
                         <View style={styles.qtyContainer}>
@@ -107,13 +127,44 @@ export default function AnalysisResult({ data, imageUri, onSave, onDiscard }: An
                         <TouchableOpacity style={styles.secondaryBtn} onPress={() => { }}>
                             <Text style={styles.secondaryBtnText}>Fix results</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.primaryBtn} onPress={onSave}>
+                        <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
                             <Text style={styles.primaryBtnText}>Done</Text>
                         </TouchableOpacity>
                     </View>
 
                 </ScrollView>
             </View>
+
+            {/* Category Picker Modal */}
+            <Modal
+                transparent={true}
+                visible={showCategoryPicker}
+                animationType="fade"
+                onRequestClose={() => setShowCategoryPicker(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setShowCategoryPicker(false)}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.pickerContainer}>
+                                <Text style={styles.pickerTitle}>Select Meal</Text>
+                                {CATEGORIES.map((cat) => (
+                                    <TouchableOpacity
+                                        key={cat}
+                                        style={[styles.pickerItem, currentCategory === cat && styles.selectedPickerItem]}
+                                        onPress={() => {
+                                            setCurrentCategory(cat);
+                                            setShowCategoryPicker(false);
+                                        }}
+                                    >
+                                        <Text style={[styles.pickerItemText, currentCategory === cat && styles.selectedPickerItemText]}>{cat}</Text>
+                                        {currentCategory === cat && <Ionicons name="checkmark" size={20} color={Colors.actionOrange} />}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </View>
     );
 }
@@ -178,13 +229,57 @@ const styles = StyleSheet.create({
     categoryBadge: {
         color: Colors.textSecondary, // or a soft pill
         fontSize: 12,
+    },
+    categoryBadgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
         backgroundColor: Colors.darkSurface,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 8,
         alignSelf: 'flex-start',
         marginBottom: 5,
-        overflow: 'hidden',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pickerContainer: {
+        backgroundColor: Colors.darkSurface,
+        width: '80%',
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    pickerTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
+    pickerItem: {
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        borderRadius: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    selectedPickerItem: {
+        backgroundColor: 'rgba(255, 172, 75, 0.1)', // ActionOrange with opacity
+    },
+    pickerItemText: {
+        color: Colors.textSecondary,
+        fontSize: 16,
+    },
+    selectedPickerItemText: {
+        color: Colors.actionOrange,
+        fontWeight: '600',
     },
     foodName: {
         color: Colors.textPrimary,

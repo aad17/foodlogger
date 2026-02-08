@@ -15,7 +15,7 @@ export interface FoodData {
     micros?: {
         [key: string]: string | number;
     };
-    category: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+    category: 'Breakfast' | 'Morning Snack' | 'Lunch' | 'Evening Snack' | 'Dinner';
     timestamp: string;
     confidence: number;
     imageUri?: string;
@@ -77,10 +77,11 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
           "Calcium": "string",
           "Iron": "string"
         },
-        "category": "Breakfast" | "Lunch" | "Dinner" | "Snack",
+        "category": "Breakfast" | "Morning Snack" | "Lunch" | "Evening Snack" | "Dinner",
         "confidence": number (0-1)
       }
       Estimate the portion size visible. If unsure, make a best guess based on standard serving sizes.
+      Choose the category based on the type of food and typical meal times for such food.
     `;
 
         const result = await model.generateContent([
