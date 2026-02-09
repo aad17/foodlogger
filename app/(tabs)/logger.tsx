@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { addWaterLog, addWeightLog, getDailyWaterLogs, getWeightLogs, WaterLog, WeightLog } from '../../services/logService';
 import { getUserProfile, UserProfile } from '../../services/userService';
 import { format, addDays, startOfDay, isSameDay } from 'date-fns';
+import { LineChart } from 'react-native-gifted-charts';
 
 export default function LoggerScreen() {
     const { user } = useAuth();
@@ -166,7 +167,28 @@ export default function LoggerScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Chart Placeholder / Simple List */}
+
+                    {/* Chart & History */}
+                    {weightLogs.length > 1 && (
+                        <View style={{ marginVertical: 20, alignItems: 'center' }}>
+                            <LineChart
+                                data={weightLogs.map(l => ({ value: l.weight, label: format(new Date(l.timestamp), 'd/M') }))}
+                                color={Colors.secondaryPurple}
+                                thickness={3}
+                                dataPointsColor={Colors.secondaryPurple}
+                                hideRules
+                                hideYAxisText
+                                yAxisColor="transparent"
+                                xAxisColor="rgba(255,255,255,0.1)"
+                                xAxisLabelTextStyle={{ color: Colors.textSecondary, fontSize: 10 }}
+                                width={300}
+                                height={150}
+                                curved
+                                isAnimated
+                            />
+                        </View>
+                    )}
+
                     <Text style={styles.historyTitle}>Recent History</Text>
                     {weightLogs.slice(-5).reverse().map((log) => (
                         <View key={log.id} style={styles.historyRow}>

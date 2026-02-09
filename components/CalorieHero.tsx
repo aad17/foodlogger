@@ -49,8 +49,9 @@ export default function CalorieHero({ caloriesConsumed, calorieGoal }: CalorieHe
                         innerRadius={55}
                         backgroundColor={Colors.primaryYellow} // Match card
                         centerLabelComponent={() => (
-                            <View style={{ transform: [{ rotate: '180deg' }] }}>
+                            <View style={{ transform: [{ rotate: '180deg' }], alignItems: 'center' }}>
                                 <Text style={styles.centerValue}>{remaining}</Text>
+                                <Text style={styles.centerLabel}>Left</Text>
                             </View>
                         )}
                     />
@@ -58,7 +59,14 @@ export default function CalorieHero({ caloriesConsumed, calorieGoal }: CalorieHe
             </View>
 
             <View style={styles.labels}>
-                {/* Optional small labels like "0" and "Goal" or similar */}
+                <View>
+                    <Text style={styles.labelTitle}>Consumed</Text>
+                    <Text style={styles.labelValue}>{caloriesConsumed}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={styles.labelTitle}>Goal</Text>
+                    <Text style={styles.labelValue}>{calorieGoal}</Text>
+                </View>
             </View>
         </View>
     );
@@ -106,10 +114,26 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: Colors.darkBackground,
     },
+    centerLabel: {
+        fontSize: 12,
+        color: 'rgba(0,0,0,0.6)',
+        fontWeight: '600',
+    },
     labels: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
         paddingHorizontal: 10,
+        marginTop: 10,
+    },
+    labelTitle: {
+        fontSize: 12,
+        color: 'rgba(0,0,0,0.5)',
+        marginBottom: 2,
+    },
+    labelValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.darkBackground,
     }
 });
