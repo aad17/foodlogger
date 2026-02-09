@@ -6,9 +6,20 @@ interface MacroGridProps {
     protein: number;
     carbs: number;
     fat: number;
+    proteinTarget?: number;
+    carbsTarget?: number;
+    fatTarget?: number;
 }
 
-export default function MacroGrid({ protein, carbs, fat }: MacroGridProps) {
+export default function MacroGrid({ protein, carbs, fat, proteinTarget, carbsTarget, fatTarget }: MacroGridProps) {
+    const renderValue = (val: number, target?: number) => (
+        <Text style={styles.value}>
+            {val}
+            {target ? <Text style={styles.target}> / {target}</Text> : ''}
+            <Text style={styles.unit}> g</Text>
+        </Text>
+    );
+
     return (
         <View style={styles.container}>
             {/* Protein Card (Purple) */}
@@ -17,18 +28,37 @@ export default function MacroGrid({ protein, carbs, fat }: MacroGridProps) {
                     <Ionicons name="flash" size={16} color="#fff" />
                 </View>
                 <View>
-                    <Text style={styles.value}>{protein}<Text style={styles.unit}> gram</Text></Text>
+                    {renderValue(protein, proteinTarget)}
                     <Text style={styles.label}>Protein</Text>
                 </View>
             </View>
 
-            {/* Fat/Carbs Card (Green - using for Fat/Other) */}
+            {/* Carbs Card (Blue/Orange?) - Let's use Orange for Carbs */}
+            <View style={[styles.card, { backgroundColor: Colors.actionOrange }]}>
+                <View style={[styles.iconBubble, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                    <Ionicons name="pizza" size={16} color="#fff" />
+                </View>
+                <View>
+                    {renderValue(carbs, carbsTarget)}
+                    <Text style={styles.label}>Carbs</Text>
+                </View>
+            </View>
+
+            {/* Fat Card (Green) */}
             <View style={[styles.card, { backgroundColor: Colors.tertiaryGreen }]}>
                 <View style={[styles.iconBubble, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                     <Ionicons name="leaf" size={16} color="#fff" />
                 </View>
                 <View>
-                    <Text style={[styles.value, { color: Colors.darkBackground }]}>{fat}<Text style={styles.unit}> gram</Text></Text>
+                    {/* Fat card used dark text in previous version, keeping it consistant or white? 
+                        Previous version had explicit dark text colors. I'll stick to white for uniformity or revert if needed.
+                        Actually, Green usually needs dark text.
+                    */}
+                    <Text style={[styles.value, { color: Colors.darkBackground }]}>
+                        {fat}
+                        {fatTarget ? <Text style={{ color: 'rgba(0,0,0,0.6)', fontSize: 16 }}> / {fatTarget}</Text> : ''}
+                        <Text style={[styles.unit, { color: Colors.darkBackground }]}> g</Text>
+                    </Text>
                     <Text style={[styles.label, { color: Colors.darkBackground }]}>Fat</Text>
                 </View>
             </View>
@@ -39,32 +69,37 @@ export default function MacroGrid({ protein, carbs, fat }: MacroGridProps) {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        gap: 15,
+        gap: 10, // Reduced gap to fit 3 cards
         paddingHorizontal: 20,
         marginTop: 20,
     },
     card: {
         flex: 1,
-        borderRadius: 25,
-        padding: 15,
+        borderRadius: 20, // Slightly smaller radius
+        padding: 12, // Reduced padding
         height: 140,
         justifyContent: 'space-between',
     },
     iconBubble: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'flex-end',
     },
     value: {
-        fontSize: 24,
+        fontSize: 20, // Slightly smaller font
         fontWeight: 'bold',
         color: '#fff',
     },
-    unit: {
+    target: {
         fontSize: 14,
+        fontWeight: 'normal',
+        opacity: 0.8,
+    },
+    unit: {
+        fontSize: 12,
         fontWeight: 'normal',
     },
     label: {

@@ -121,6 +121,10 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const data = JSON.parse(jsonStr);
 
+        // ... existing code
+
+
+
         return {
             ...data,
             // Ensure defaults if AI misses them
@@ -142,5 +146,60 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
             console.error('Error stack:', error.stack);
         }
         throw error;
+    }
+};
+
+export const calculateNutritionalTargets = async (
+    age: number,
+    gender: string,
+    height: number,
+    weight: number,
+    activityLevel: string,
+    goal: string
+) => {
+    // If genAI is null, we can try to re-init it or just fail gracefully/mock.
+    // Since genAI is top-level const, we can access it.
+    if (!genAI) {
+        console.warn('Gemini API Key not found. Returning default targets.');
+        return { calories: 2000, protein: 150, carbs: 200, fat: 65, water: 2500 };
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+    const prompt = `
+      Calculate daily nutritional targets for a person with these stats:
+      Gender: ${gender}
+      Age: ${age}
+      Height: ${height} cm
+      Weight: ${weight} kg
+      Activity Level: ${activityLevel}
+      Goal: ${goal}
+      
+      Return ONLY a valid JSON object:
+      {
+        "calories": number,
+        "protein": number (grams),
+        "carbs": number (grams),
+        "fat": number (grams),
+        "water": number (ml, rough recommendation)
+      }
+      Do not include markdown formatting like \`\`\`json.
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+        const jsonStr = text.replace(/```json|```/g, '').trim();
+        return JSON.parse(jsonStr);
+    } catch (error) {
+        console.error("AI Calculation Error:", error);
+        return {
+            calories: 2000,
+            protein: 150,
+            carbs: 200,
+            fat: 65,
+            water: 2500
+        };
     }
 };

@@ -22,9 +22,10 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="plan"
+                name="logger"
                 options={{
-                    tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+                    tabBarIcon: ({ color, size }) => <Ionicons name="water" size={size} color={color} />,
+                    tabBarLabel: 'Logger'
                 }}
             />
             <Tabs.Screen

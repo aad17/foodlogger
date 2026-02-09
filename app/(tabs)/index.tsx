@@ -5,6 +5,7 @@ import { Colors } from '../../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { getDailyLogs } from '../../services/foodService';
+import { UserProfile, getUserProfile } from '../../services/userService';
 import { FoodData } from '../../services/aiService';
 import { format } from 'date-fns';
 
@@ -20,6 +21,7 @@ export default function Dashboard() {
     const router = useRouter();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [dailyLogs, setDailyLogs] = useState<FoodData[]>([]);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
     const [refreshing, setRefreshing] = useState(false);
 
     // Unused for now but kept for logic
@@ -30,6 +32,10 @@ export default function Dashboard() {
         try {
             const logs = await getDailyLogs(user.uid, selectedDate);
             setDailyLogs(logs);
+
+            // Fetch profile for targets
+            const userProfile = await getUserProfile(user.uid);
+            setProfile(userProfile);
         } catch (e) {
             console.error(e);
         } finally {
@@ -54,8 +60,11 @@ export default function Dashboard() {
     const totalCarbs = dailyLogs.reduce((acc, log) => acc + (log.macros?.carbs || 0), 0);
     const totalFat = dailyLogs.reduce((acc, log) => acc + (log.macros?.fat || 0), 0);
 
-    // Hardcoded for now, move to user profile later
-    const CALORIE_GOAL = 2500;
+    // Use profile targets or defaults
+    const CALORIE_GOAL = profile?.targets?.calories || 2000;
+    const PROTEIN_GOAL = profile?.targets?.protein || 150;
+    const CARBS_GOAL = profile?.targets?.carbs || 200;
+    const FAT_GOAL = profile?.targets?.fat || 65;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -78,6 +87,9 @@ export default function Dashboard() {
                     protein={Math.round(totalProtein)}
                     carbs={Math.round(totalCarbs)}
                     fat={Math.round(totalFat)}
+                    proteinTarget={PROTEIN_GOAL}
+                    carbsTarget={CARBS_GOAL}
+                    fatTarget={FAT_GOAL}
                 />
 
                 {/* 4. Categorized Logs */}
