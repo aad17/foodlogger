@@ -22,12 +22,45 @@ export default function AnalysisResult({ data, imageUri, onSave, onDiscard }: An
     );
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
+    // Quantity Logic
+    const [quantity, setQuantity] = useState(data.quantity || 1);
+
+    // Derived values
+    const unitCalories = data.calories / (data.quantity || 1);
+    const unitProtein = data.macros.protein / (data.quantity || 1);
+    const unitCarbs = data.macros.carbs / (data.quantity || 1);
+    const unitFat = data.macros.fat / (data.quantity || 1);
+
+    const displayCalories = Math.round(unitCalories * quantity);
+    const displayProtein = Math.round(unitProtein * quantity);
+    const displayCarbs = Math.round(unitCarbs * quantity);
+    const displayFat = Math.round(unitFat * quantity);
+
     const handleSave = () => {
         onSave({
             ...data,
-            category: currentCategory
+            category: currentCategory,
+            quantity: quantity,
+            calories: displayCalories,
+            macros: {
+                protein: displayProtein,
+                carbs: displayCarbs,
+                fat: displayFat,
+            }
         });
     };
+
+    const changeQty = (delta: number) => {
+        setQuantity(prev => Math.max(0.5, prev + delta));
+    };
+
+    const getHealthColor = (score: number) => {
+        if (score >= 80) return Colors.tertiaryGreen;
+        if (score >= 50) return Colors.primaryYellow;
+        return Colors.actionOrange;
+    };
+
+    const healthColor = getHealthColor(data.healthScore || 50);
 
     return (
         <View style={styles.container}>
@@ -69,63 +102,62 @@ export default function AnalysisResult({ data, imageUri, onSave, onDiscard }: An
                             <Text style={styles.foodName}>{data.foodName}</Text>
                         </View>
                         <View style={styles.qtyContainer}>
-                            <TouchableOpacity><Ionicons name="remove" size={20} color={Colors.textPrimary} /></TouchableOpacity>
-                            <Text style={styles.qtyText}>1</Text>
-                            <TouchableOpacity><Ionicons name="add" size={20} color={Colors.textPrimary} /></TouchableOpacity>
+                            <TouchableOpacity onPress={() => changeQty(-0.5)}><Ionicons name="remove" size={20} color={Colors.textPrimary} /></TouchableOpacity>
+                            <Text style={styles.qtyText}>{quantity}</Text>
+                            <TouchableOpacity onPress={() => changeQty(0.5)}><Ionicons name="add" size={20} color={Colors.textPrimary} /></TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Health Score */}
-                    <View style={styles.healthCard}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                            <Ionicons name="flash" size={16} color={Colors.textSecondary} />
-                            <Text style={styles.healthTitle}>Health score</Text>
+                    {data.healthScore !== undefined && (
+                        <View style={styles.healthCard}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                                <Ionicons name="flash" size={16} color={Colors.textSecondary} />
+                                <Text style={styles.healthTitle}>Health score</Text>
+                            </View>
+                            <View style={styles.healthBarBg}>
+                                <View style={[styles.healthBarFill, { width: `${data.healthScore}%`, backgroundColor: healthColor }]} />
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={[styles.healthScoreText, { color: healthColor }]}>{data.healthScore}%</Text>
+                                <Text style={styles.healthReasonText} numberOfLines={1}>{data.healthScoreReason}</Text>
+                            </View>
                         </View>
-                        <View style={styles.healthBarBg}>
-                            <View style={[styles.healthBarFill, { width: '70%', backgroundColor: Colors.tertiaryGreen }]} />
-                        </View>
-                        <Text style={styles.healthScoreText}>70%</Text>
-                    </View>
+                    )}
 
                     {/* Nutrient Cards Row */}
                     <View style={styles.nutrientRow}>
-                        {/* Calories - Purple in inspiration, Yellow in my concept? 
-                            Inspiration: Purple=Calories, Yellow=Carbs. 
-                            My system: Yellow=Calories. usage.
-                            Let's follow inspiration colors for this card to match request "look and feel like inspirations".
-                            Purple = Calories. Yellow = Carbs.
-                        */}
                         <View style={[styles.nutrientCard, { backgroundColor: Colors.secondaryPurple }]}>
                             <Ionicons name="flame" size={20} color="#fff" />
                             <Text style={styles.nutrientLabel}>Calories</Text>
-                            <Text style={styles.nutrientValue}>{data.calories} <Text style={{ fontSize: 12 }}>kcal</Text></Text>
+                            <Text style={styles.nutrientValue}>{displayCalories} <Text style={{ fontSize: 12 }}>kcal</Text></Text>
                         </View>
 
                         <View style={[styles.nutrientCard, { backgroundColor: Colors.primaryYellow }]}>
                             <Ionicons name="flash" size={20} color={Colors.darkBackground} />
                             <Text style={[styles.nutrientLabel, { color: Colors.darkBackground }]}>Carbs</Text>
-                            <Text style={[styles.nutrientValue, { color: Colors.darkBackground }]}>{data.macros.carbs} <Text style={{ fontSize: 12 }}>g</Text></Text>
+                            <Text style={[styles.nutrientValue, { color: Colors.darkBackground }]}>{displayCarbs} <Text style={{ fontSize: 12 }}>g</Text></Text>
                         </View>
                     </View>
 
-                    {/* Second Row for Protein/Fat if needed, or list */}
+                    {/* Second Row for Protein/Fat */}
                     <View style={[styles.nutrientRow, { marginTop: 10 }]}>
                         {/* Protein */}
                         <View style={[styles.nutrientCard, { backgroundColor: Colors.darkSurface, flex: 1 }]}>
                             <Text style={styles.nutrientLabel}>Protein</Text>
-                            <Text style={styles.nutrientWhiteVal}>{data.macros.protein}g</Text>
+                            <Text style={styles.nutrientWhiteVal}>{displayProtein}g</Text>
                         </View>
                         {/* Fat */}
                         <View style={[styles.nutrientCard, { backgroundColor: Colors.darkSurface, flex: 1 }]}>
                             <Text style={styles.nutrientLabel}>Fat</Text>
-                            <Text style={styles.nutrientWhiteVal}>{data.macros.fat}g</Text>
+                            <Text style={styles.nutrientWhiteVal}>{displayFat}g</Text>
                         </View>
                     </View>
 
                     {/* Action Buttons */}
                     <View style={styles.actionRow}>
-                        <TouchableOpacity style={styles.secondaryBtn} onPress={() => { }}>
-                            <Text style={styles.secondaryBtnText}>Fix results</Text>
+                        <TouchableOpacity style={styles.secondaryBtn} onPress={onDiscard}>
+                            <Text style={styles.secondaryBtnText}>Discard</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
                             <Text style={styles.primaryBtnText}>Done</Text>
@@ -324,6 +356,12 @@ const styles = StyleSheet.create({
     healthScoreText: {
         color: '#fff',
         fontWeight: 'bold',
+    },
+    healthReasonText: {
+        color: Colors.textSecondary,
+        fontSize: 12,
+        fontStyle: 'italic',
+        maxWidth: '70%',
     },
     nutrientRow: {
         flexDirection: 'row',

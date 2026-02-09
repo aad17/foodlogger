@@ -20,6 +20,11 @@ export interface FoodData {
     confidence: number;
     imageUri?: string;
     id?: string;
+    // New Fields
+    isFood: boolean;
+    healthScore: number; // 0-100
+    healthScoreReason?: string;
+    quantity: number; // Default 1
 }
 
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
@@ -36,6 +41,10 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
             category: 'Breakfast',
             timestamp: new Date().toISOString(),
             confidence: 0.9,
+            isFood: true,
+            healthScore: 85,
+            healthScoreReason: 'High in healthy fats and fiber.',
+            quantity: 1,
         };
     }
 
@@ -61,9 +70,13 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
         const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
         const prompt = `
-      Analyze this food image and provide nutritional information.
+      Analyze this image.
+      First, determine if it contains food.
+      If it represents food, extract nutritional information.
+      
       Return ONLY a valid JSON object with this exact structure:
       {
+        "isFood": boolean,
         "foodName": "string",
         "calories": number,
         "macros": {
@@ -72,16 +85,23 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
           "fat": number
         },
         "micros": {
-          "Vitamin A": "string (e.g. 10% DV)",
+          "Vitamin A": "string",
           "Vitamin C": "string",
           "Calcium": "string",
           "Iron": "string"
         },
         "category": "Breakfast" | "Morning Snack" | "Lunch" | "Evening Snack" | "Dinner",
-        "confidence": number (0-1)
+        "confidence": number (0-1),
+        "healthScore": number (0-100),
+        "healthScoreReason": "string (brief explanation why)",
+        "quantity": number (Estimate the count or serving size, default to 1 if one portion)
       }
-      Estimate the portion size visible. If unsure, make a best guess based on standard serving sizes.
-      Choose the category based on the type of food and typical meal times for such food.
+
+      If "isFood" is false, you can set the other fields to null or appropriate defaults, but the JSON must still be valid.
+      
+      For Health Score: 0 is very unhealthy (processed, high sugar/trans fat), 100 is very healthy (whole food, balanced).
+      Estimate the portion size visible.
+      Choose the category based on the type of food and typical meal times.
     `;
 
         const result = await model.generateContent([
@@ -103,6 +123,10 @@ export const analyzeImage = async (uri: string): Promise<FoodData> => {
 
         return {
             ...data,
+            // Ensure defaults if AI misses them
+            isFood: data.isFood !== undefined ? data.isFood : true,
+            quantity: data.quantity || 1,
+            healthScore: data.healthScore || 50,
             timestamp: new Date().toISOString(),
         };
 

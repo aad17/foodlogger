@@ -76,6 +76,19 @@ export default function ScanScreen() {
             console.log('Analyzing image...');
             const data = await analyzeImage(uri);
             console.log('Analysis complete:', data);
+
+            if (data.isFood === false) {
+                Alert.alert("No Food Detected", "It looks like this image doesn't contain food. Please try scanning a valid food item.", [
+                    {
+                        text: "OK",
+                        onPress: () => {
+                            setImageUri(null);
+                        }
+                    }
+                ]);
+                return;
+            }
+
             setResult(data);
         } catch (error) {
             Alert.alert('Analysis Failed', 'Could not analyze the image. Please try again.');

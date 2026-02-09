@@ -8,7 +8,8 @@ import {
     Timestamp,
     orderBy,
     deleteDoc,
-    doc
+    doc,
+    updateDoc
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { FoodData } from './aiService';
@@ -26,6 +27,17 @@ export const addFoodLog = async (userId: string, foodData: FoodData) => {
         return docRef.id;
     } catch (e) {
         console.error('Error adding document: ', e);
+        throw e;
+    }
+};
+
+export const updateFoodLog = async (userId: string, logId: string, updates: Partial<FoodData>) => {
+    try {
+        const docRef = doc(db, 'users', userId, LOGS_COLLECTION, logId);
+        await updateDoc(docRef, updates); // @ts-ignore - import updateDoc
+        console.log('Document updated with ID: ', logId);
+    } catch (e) {
+        console.error('Error updating document: ', e);
         throw e;
     }
 };
